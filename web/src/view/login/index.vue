@@ -85,7 +85,8 @@
                   @click="submitForm"
                 >登 录</el-button>
               </el-form-item>
-              <el-form-item class="mb-6">
+              <el-form-item class="mb-6"
+                 v-if="initDbFlag">
                 <el-button
                   class="shadow shadow-blue-600 h-11 w-full"
                   type="primary"
@@ -106,6 +107,7 @@
     </div>
 
     <BottomInfo class="left-0 right-0 absolute bottom-3 mx-auto  w-full z-20">
+      <!--
       <div class="links items-center justify-center gap-2 hidden md:flex">
         <a
           href="http://doc.henrongyi.top/"
@@ -148,6 +150,7 @@
           >
         </a>
       </div>
+      -->
     </BottomInfo>
   </div>
 </template>
@@ -156,7 +159,7 @@
 import { captcha } from '@/api/user'
 import { checkDB } from '@/api/initdb'
 import BottomInfo from '@/view/layout/bottomInfo/bottomInfo.vue'
-import { reactive, ref } from 'vue'
+import { reactive, ref, onBeforeMount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
@@ -242,11 +245,21 @@ const submitForm = () => {
   })
 }
 
-// 跳转初始化
-const checkInit = async() => {
+const needInitDbFlag = async() => {
   const res = await checkDB()
+  let flag = false
   if (res.code === 0) {
     if (res.data?.needInit) {
+      flag = true
+    }
+  }
+  return flag
+}
+
+// 跳转初始化
+const checkInit = () => {
+  needInitDbFlag().then(result => {
+    if (result) {
       userStore.NeedInit()
       router.push({ name: 'Init' })
     } else {
@@ -255,7 +268,15 @@ const checkInit = async() => {
         message: '已配置数据库信息，无法初始化',
       })
     }
-  }
+  })
 }
+
+onBeforeMount(() => {
+  needInitDbFlag().then(result => {
+    if (!result) {
+      initDbFlag.value = false
+    }
+  })
+})
 
 </script>
